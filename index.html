@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบฟื้นฟูสมรรถภาพทางกายสำหรับผู้ป่วยติดเตียง</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1635988162/pose.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ระบบฟื้นฟูสมรรถภาพทางกายสำหรับผู้ป่วยติดเตียง</h1>
+            <p class="tagline">ระบบอัจฉริยะเพื่อการฟื้นฟูสมรรถภาพที่มีประสิทธิภาพ ด้วยเทคโนโลยี AI</p>
+        </header>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" id="exercise-tab">
+                    <i class="fas fa-running"></i> การฝึก
+                </button>
+                <button class="tab-btn" id="records-tab">
+                    <i class="fas fa-chart-line"></i> ประวัติ
+                </button>
+                <button class="tab-btn" id="profile-tab">
+                    <i class="fas fa-user"></i> ข้อมูลผู้ป่วย
+                </button>
+                <button class="tab-btn" id="therapist-tab">
+                    <i class="fas fa-user-md"></i> นักกายภาพ
+                </button>
+            </div>
+
+            <!-- หน้าการฝึก -->
+            <div class="tab-content active" id="exercise-content">
+                <div class="exercise-container">
+                    <div class="camera-container">
+                        <div class="video-container">
+                            <video class="input-video" autoplay playsinline></video>
+                            <canvas class="output-canvas"></canvas>
+                        </div>
+                        <div class="camera-controls">
+                            <button class="btn btn-primary" id="start-exercise-btn">
+                                <i class="fas fa-play"></i> เริ่มการฝึก
+                            </button>
+                            <button class="btn-icon" id="reset-camera-btn" title="รีเซ็ตกล้อง">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn-icon" id="fullscreen-btn" title="เต็มจอ">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+
+                    <div class="control-panel">
+                        <div class="training-stats">
+                            <div class="stat-container">
+                                <div class="stat-label">จำนวนครั้ง</div>
+                                <div class="stat-value" id="rep-counter">0</div>
+                            </div>
+                            <div class="stat-container">
+                                <div class="stat-label">เวลา</div>
+                                <div class="stat-value" id="exercise-timer">00:00</div>
+                            </div>
+                            <div class="stat-container">
+                                <div class="stat-label">ความแม่นยำ</div>
+                                <div class="stat-value" id="accuracy-value">0%</div>
+                            </div>
+                        </div>
+
+                        <div class="progress-container">
+                            <div class="progress">
+                                <div class="progress-bar" id="exercise-progress" style="width: 0%;"></div>
+                            </div>
+                            <span class="progress-text" id="progress-text">การฝึกสำเร็จ 0%</span>
+                        </div>
+
+                        <div class="exercise-settings">
+                            <div class="form-group">
+                                <label for="exercise-select">เลือกท่าฝึกสำหรับผู้ป่วยติดเตียง</label>
+                                <select class="form-control" id="exercise-select">
+                                    <option value="butterfly-dance" selected>ท่าที่ 1:ท่ายกแขน</option>
+                                    <option value="peacock">ท่าที่ 2: ท่างอและเหยียดศอก</option>
+                                    <option value="dragon-claw">ท่าที่ 3:ท่ากระดกข้อมือ</option>
+                                    <option value="tiger-roar">ท่าที่ 4:ท่ากางเข่า</option>
+                                    <option value="flying">ท่าที่ 5:ท่ายกขา</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="side-select">เลือกข้างที่ต้องการทำกายภาพ</label>
+                                <select class="form-control" id="side-select">
+                                    <option value="right" selected>ข้างขวา</option>
+                                    <option value="left">ข้างซ้าย</option>
+                                    <option value="both">ทั้งสองข้าง</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="target-reps">จำนวนครั้งต่อเซต</label>
+                                    <input type="number" id="target-reps" class="form-control" value="10" min="1" max="50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="target-sets">จำนวนเซต</label>
+                                    <input type="number" id="target-sets" class="form-control" value="2" min="1" max="10">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rest-time">เวลาพัก (วินาที)</label>
+                                    <input type="number" id="rest-time" class="form-control" value="30" min="10" max="120">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chart-container-sm">
+                            <h3>กราฟการเคลื่อนไหว</h3>
+                            <canvas id="angle-chart" width="400" height="200"></canvas>
+                        </div>
+    
+
+                        <div class="instruction-panel">
+                            <h3>คำแนะนำ</h3>
+                            <p class="instruction-text">ผู้ช่วยจับข้อต่อของผู้ป่วย (เช่น ข้อเข่า ข้อศอก) และค่อยๆ ขยับให้เคลื่อนไหวตามช่วงการเคลื่อนไหวปกติ โดยทำซ้ำอย่างนุ่มนวล</p>
+                        </div>
+
+                        <div class="feedback-panel">
+                            <h3>ข้อเสนอแนะ</h3>
+                            <p class="feedback-text">รอการตรวจจับท่าทาง...</p>
+                        </div>
+
+                        <div class="success-alert" style="display: none;">
+                            <span><i class="fas fa-check-circle"></i></span>
+                            ยินดีด้วย! คุณทำเสร็จแล้ว ผลการฝึกของคุณได้รับการบันทึกแล้ว
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- หน้าประวัติ -->
+            <div class="tab-content" id="records-content">
+                <div class="record-container">
+                    <div class="filter-controls">
+                        <div class="date-filter">
+                            <label>ช่วงวันที่:</label>
+                            <input type="date" id="start-date" class="form-control" style="width: auto;">
+                            <span>ถึง</span>
+                            <input type="date" id="end-date" class="form-control" style="width: auto;">
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="filter-btn">
+                            <i class="fas fa-filter"></i> กรอง
+                        </button>
+                    </div>
+
+                    <div class="summary-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="total-session-count">0</div>
+                                <div class="stat-label">จำนวนครั้งที่ฝึก</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="total-exercise-time">00:00</div>
+                                <div class="stat-label">เวลาฝึกทั้งหมด (ชั่วโมง)</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="progress-percentage">0%</div>
+                                <div class="stat-label">พัฒนาการ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="record-table-container">
+                        <table class="record-table">
+                            <thead>
+                                <tr>
+                                    <th>วันที่</th>
+                                    <th>ท่าฝึก</th>
+                                    <th>จำนวนครั้ง</th>
+                                    <th>เวลา</th>
+                                    <th>ความแม่นยำ</th>
+                                    <th>คะแนน</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="record-table-body">
+                                <!-- ข้อมูลจะถูกเพิ่มโดย JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="chart-container">
+                        <h3>พัฒนาการของผู้ป่วย</h3>
+                        <div class="progress-chart" id="progress-chart">
+                            <canvas id="progress-chart-canvas" width="800" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- หน้าข้อมูลผู้ป่วย -->
+            <div class="tab-content" id="profile-content">
+                <div class="patient-form">
+                    <h2>ข้อมูลผู้ป่วยติดเตียง</h2>
+                    <div class="form-group">
+                        <label for="patient-name">ชื่อ-นามสกุล</label>
+                        <input type="text" id="patient-name" class="form-control" value="นายสมชาย ใจดี">
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-id">รหัสผู้ป่วย</label>
+                        <input type="text" id="patient-id" class="form-control" value="PT12345" readonly>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-age">อายุ</label>
+                            <input type="number" id="patient-age" class="form-control" value="65">
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-gender">เพศ</label>
+                            <select id="patient-gender" class="form-control">
+                                <option value="male" selected>ชาย</option>
+                                <option value="female">หญิง</option>
+                                <option value="other">อื่นๆ</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-condition">อาการ/โรค</label>
+                        <input type="text" id="patient-condition" class="form-control" value="ผู้ป่วยติดเตียงจากโรคหลอดเลือดสมอง">
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-bedridden-duration">ระยะเวลาการติดเตียง (เดือน)</label>
+                        <input type="number" id="patient-bedridden-duration" class="form-control" value="6">
+                    </div>
+
+                    <div class="pain-scale">
+                        <div class="pain-level">
+                            <h3>ระดับความเจ็บปวด</h3>
+                            <input type="range" min="0" max="10" value="4" class="form-range" id="pain-level">
+                            <p>ค่าปัจจุบัน: <span id="pain-level-value">4</span>/10</p>
+                        </div>
+                        <div class="pain-location">
+                            <h3>ตำแหน่งที่เจ็บ</h3>
+                            <div class="form-group">
+                                <select id="pain-location" class="form-control">
+                                    <option selected>ขาขวา</option>
+                                    <option>เข่าซ้าย</option>
+                                    <option>สะโพกขวา</option>
+                                    <option>หลังส่วนล่าง</option>
+                                    <option>ข้อเท้าซ้าย</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="patient-notes">บันทึกเพิ่มเติม</label>
+                        <textarea id="patient-notes" class="form-control" rows="4">ผู้ป่วยมีภาวะกล้ามเนื้ออ่อนแรงข้างขวา เริ่มมีภาวะข้อติดและเสี่ยงเกิดแผลกดทับ ควรทำกายภาพบำบัดอย่างต่อเนื่อง</textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" id="reset-patient-btn">
+                            <i class="fas fa-undo"></i> รีเซ็ต
+                        </button>
+                        <button class="btn btn-primary" id="save-patient-btn">
+                            <i class="fas fa-save"></i> บันทึกข้อมูล
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- หน้านักกายภาพ -->
+            <div class="tab-content" id="therapist-content">
+                <div class="therapist-container">
+                    <div class="therapist-controls">
+                        <div class="program-builder">
+                            <h2>สร้างโปรแกรมการฝึกสำหรับผู้ป่วยติดเตียง</h2>
+                            <div class="form-group">
+                                <label for="program-name">ชื่อโปรแกรม</label>
+                                <input type="text" id="program-name" class="form-control" placeholder="เช่น โปรแกรมฟื้นฟูผู้ป่วยติดเตียง">
+                            </div>
+
+                            <!-- แก้ไขส่วนของตัวเลือกท่ากายภาพในหน้านักกายภาพ -->
+                                <div class="form-group">
+                                    <label for="exercise-select-program">เพิ่มท่าฝึกสำหรับผู้ป่วยติดเตียง</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <select id="exercise-select-program" class="form-control">
+                                            <option value="">-- เลือกท่าฝึก --</option>
+                                            <option value="butterfly-dance">ท่าที่ 1:ท่ายกแขน</option>
+                                            <option value="peacock">ท่าที่ 2:ท่างอและเหยียดศอก</option>
+                                            <option value="dragon-claw">ท่าที่ 3:ท่ากระดกข้อมือ</option>
+                                            <option value="tiger-roar">ท่าที่ 4:ท่ากางเข่า</option>
+                                            <option value="flying">ท่าที่ 5:ท่ายกขา</option>
+                                        </select>
+                                        <button class="btn btn-primary" id="add-exercise-btn">เพิ่ม</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="program-exercise-list" id="program-exercise-list">
+                                <!-- รายการท่าที่เพิ่มจะแสดงที่นี่ -->
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-secondary" id="clear-program-btn">
+                                    <i class="fas fa-trash-alt"></i> ล้างข้อมูล
+                                </button>
+                                <button class="btn btn-primary" id="save-program-btn">
+                                    <i class="fas fa-save"></i> บันทึกโปรแกรม
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="patient-progress">
+                            <h2>ความก้าวหน้าของผู้ป่วย</h2>
+                            <div class="form-group">
+                                <label for="patient-select">เลือกผู้ป่วย</label>
+                                <select id="patient-select" class="form-control">
+                                    <option value="PT12345">นายสมชาย ใจดี (PT12345)</option>
+                                    <option value="PT12346">นางสาวสมหญิง รักดี (PT12346)</option>
+                                </select>
+                            </div>
+
+                            <div class="patient-stats">
+                                <div class="stat-card-sm">
+                                    <div class="stat-label">ความสม่ำเสมอ</div>
+                                    <div class="stat-value" id="consistency-value">0%</div>
+                                </div>
+                                <div class="stat-card-sm">
+                                    <div class="stat-label">ความก้าวหน้า</div>
+                                    <div class="stat-value" id="improvement-value">0%</div>
+                                </div>
+                                <div class="stat-card-sm">
+                                    <div class="stat-label">ระดับความเจ็บปวด</div>
+                                    <div class="stat-value" id="current-pain-level">0/10</div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container-sm">
+                                <h3>แนวโน้มการฟื้นตัว</h3>
+                                <canvas id="recovery-trend-chart" width="400" height="200"></canvas>
+                            </div>
+
+                            <button class="btn btn-primary" id="view-detailed-report-btn" style="width: 100%;">
+                                <i class="fas fa-file-medical-alt"></i> ดูรายงานโดยละเอียด
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="program-list-container">
+                        <h2>โปรแกรมการฝึกสำหรับผู้ป่วยติดเตียง</h2>
+                        <div class="saved-programs" id="saved-programs">
+                            <!-- โปรแกรมที่บันทึกไว้จะแสดงที่นี่ -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- โมดัลผลการฝึก -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>ผลการฝึก</h2>
+            <div class="modal-body">
+                <div class="result-stats">
+                    <div class="result-stat">
+                        <div class="result-label">จำนวนครั้ง</div>
+                        <div class="result-value" id="modal-reps">0/0</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="result-label">เวลา</div>
+                        <div class="result-value" id="modal-time">00:00</div>
+                    </div>
+                    <div class="result-stat">
+                        <div class="result-label">คะแนน</div>
+                        <div class="result-value" id="modal-score">0/10</div>
+                    </div>
+                </div>
+
+                <div class="result-feedback">
+                    <h3>ข้อเสนอแนะ</h3>
+                    <p id="modal-feedback">ยังไม่มีข้อมูลการฝึก</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="repeat-exercise-btn">ทำซ้ำ</button>
+                <button class="btn btn-primary" id="save-result-btn">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- โมดัลรายงานโดยละเอียด -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close">&times;</span>
+            <h2>รายงานผู้ป่วยโดยละเอียด</h2>
+            <div class="modal-body" id="report-content">
+                <!-- เนื้อหารายงานจะถูกเพิ่มโดย JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="print-report-btn">
+                    <i class="fas fa-print"></i> พิมพ์
+                </button>
+                <button class="btn btn-primary" id="close-report-btn">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- โมดัลบันทึกความเจ็บปวด -->
+    <div id="pain-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>บันทึกระดับความเจ็บปวด</h2>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modal-pain-level">ระดับความเจ็บปวด (0-10)</label>
+                    <input type="range" min="0" max="10" value="0" class="form-range" id="modal-pain-level">
+                    <p>ค่าปัจจุบัน: <span id="modal-pain-value">0</span>/10</p>
+                </div>
+                <div class="form-group">
+                    <label for="modal-pain-location">ตำแหน่งที่เจ็บ</label>
+                    <select id="modal-pain-location" class="form-control">
+                        <option>ไหล่ขวา</option>
+                        <option>เข่าซ้าย</option>
+                        <option>สะโพกขวา</option>
+                        <option>หลังส่วนล่าง</option>
+                        <option>ข้อเท้าซ้าย</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="modal-pain-notes">บันทึกเพิ่มเติม</label>
+                    <textarea id="modal-pain-notes" class="form-control" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติมเกี่ยวกับความเจ็บปวด"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-pain-btn">ยกเลิก</button>
+                <button class="btn btn-primary" id="save-pain-btn">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- โหลด MediaPipe และไลบรารี่ที่จำเป็น -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
